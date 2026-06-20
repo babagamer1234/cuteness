@@ -1,90 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<title>User Camera Upload</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>User Camera Portal</title>
 
 <style>
-  body{
+body{
     margin:0;
-    font-family:Arial;
-    background:#111;
-    color:#fff;
+    background:#0f172a;
+    color:white;
+    font-family:sans-serif;
     display:flex;
-    flex-direction:column;
-    align-items:center;
     justify-content:center;
-    height:100vh;
-  }
-  video{
-    width:320px;
+    align-items:center;
+    min-height:100vh;
+}
+
+.card{
+    width:95%;
+    max-width:500px;
+    background:#1e293b;
+    border-radius:16px;
+    padding:20px;
+}
+
+video{
+    width:100%;
     border-radius:12px;
-    border:2px solid #00ffcc;
-  }
-  p{
+    background:black;
+}
+
+.controls{
+    margin-top:15px;
+    display:flex;
+    gap:10px;
+}
+
+button{
+    flex:1;
+    padding:12px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+}
+
+.start{background:#16a34a;color:white;}
+.stop{background:#dc2626;color:white;}
+.capture{background:#2563eb;color:white;}
+
+#status{
     margin-top:10px;
     font-size:14px;
-    opacity:0.8;
-  }
+}
 </style>
 </head>
-
 <body>
 
-<h2>📷 User Camera System</h2>
+<div class="card">
+    <h2>User Camera</h2>
 
-<video id="video" autoplay playsinline></video>
-<p id="status">Starting camera...</p>
+    <video id="video" autoplay playsinline muted></video>
 
-<canvas id="canvas" style="display:none;"></canvas>
+    <div class="controls">
+        <button class="start" onclick="startCamera()">Start</button>
+        <button class="stop" onclick="stopCamera()">Stop</button>
+        <button class="capture" onclick="captureImage()">Capture</button>
+    </div>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <p id="status">Ready</p>
+
+    <canvas id="canvas" hidden></canvas>
+</div>
 
 <script>
-/* 🔥 1. Firebase Config (replace this) */
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  databaseURL: "YOUR_DATABASE_URL",
-  projectId: "YOUR_PROJECT_ID"
-};
+let stream = null;
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+async function startCamera(){
+    try{
+        stream = await navigator.mediaDevices.getUserMedia({
+            video:true
+        });
 
-/* 📷 2. Start Camera */
-navigator.mediaDevices.getUserMedia({ video: true })
-.then(stream => {
-  document.getElementById("video").srcObject = stream;
-  document.getElementById("status").innerText = "Camera active";
+        document.getElementById("video").srcObject = stream;
+        document.getElementById("status").textContent =
+            "Camera active";
+    }
+    catch(err){
+        document.getElementById("status").textContent =
+            "Camera permission denied";
+    }
+}
 
-  const video = document.getElementById("video");
-  const canvas = document.getElementById("canvas");
-  const ctx = canvas.getContext("2d");
+function stopCamera(){
+    if(!stream) return;
 
-  canvas.width = 320;
-  canvas.height = 240;
+    stream.getTracks().forEach(track=>track.stop());
 
-  /* 🔄 3. Send frames to Firebase */
-  setInterval(() => {
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    document.getElementById("video").srcObject = null;
 
-    const image = canvas.toDataURL("image/jpeg", 0.5);
+    document.getElementById("status").textContent =
+        "Camera stopped";
+}
 
-    db.ref("camera/user1").set({
-      frame: image,
-      time: Date.now()
-    });
+function captureImage(){
 
-  }, 2000);
+    if(!stream){
+        alert("Start camera first");
+        return;
+    }
 
-})
-.catch(err => {
-  document.getElementById("status").innerText = "Camera permission denied";
-  console.log(err);
-});
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const ctx = canvas.getContext("2d");
+
+    ctx.drawImage(video,0,0);
+
+    const imageData =
+        canvas.toDataURL("image/jpeg",0.8);
+
+    console.log(imageData);
+
+    document.getElementById("status").textContent =
+        "Image captured";
+
+    // Firebase upload code can be added here
+}
 </script>
 
 </body>
