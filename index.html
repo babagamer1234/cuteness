@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>User Camera Upload</title>
+
+<style>
+  body{
+    margin:0;
+    font-family:Arial;
+    background:#111;
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    height:100vh;
+  }
+  video{
+    width:320px;
+    border-radius:12px;
+    border:2px solid #00ffcc;
+  }
+  p{
+    margin-top:10px;
+    font-size:14px;
+    opacity:0.8;
+  }
+</style>
+</head>
+
+<body>
+
+<h2>📷 User Camera System</h2>
+
+<video id="video" autoplay playsinline></video>
+<p id="status">Starting camera...</p>
+
+<canvas id="canvas" style="display:none;"></canvas>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+/* 🔥 1. Firebase Config (replace this) */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  databaseURL: "YOUR_DATABASE_URL",
+  projectId: "YOUR_PROJECT_ID"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* 📷 2. Start Camera */
+navigator.mediaDevices.getUserMedia({ video: true })
+.then(stream => {
+  document.getElementById("video").srcObject = stream;
+  document.getElementById("status").innerText = "Camera active";
+
+  const video = document.getElementById("video");
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+
+  canvas.width = 320;
+  canvas.height = 240;
+
+  /* 🔄 3. Send frames to Firebase */
+  setInterval(() => {
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const image = canvas.toDataURL("image/jpeg", 0.5);
+
+    db.ref("camera/user1").set({
+      frame: image,
+      time: Date.now()
+    });
+
+  }, 2000);
+
+})
+.catch(err => {
+  document.getElementById("status").innerText = "Camera permission denied";
+  console.log(err);
+});
+</script>
+
+</body>
+</html>
