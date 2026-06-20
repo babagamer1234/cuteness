@@ -1,136 +1,34 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>User Camera Portal</title>
+<div id="welcome">
+    <h1>Want to see your beauty? 😎</h1>
+    <button onclick="showCamera()">Yes ✨</button>
+</div>
 
-<style>
-body{
-    margin:0;
-    background:#0f172a;
-    color:white;
-    font-family:sans-serif;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    min-height:100vh;
-}
+<div id="cameraBox" style="display:none;">
+    <video id="video" autoplay playsinline></video>
 
-.card{
-    width:95%;
-    max-width:500px;
-    background:#1e293b;
-    border-radius:16px;
-    padding:20px;
-}
+    <h3>Choose Your Style 🎨</h3>
 
-video{
-    width:100%;
-    border-radius:12px;
-    background:black;
-}
-
-.controls{
-    margin-top:15px;
-    display:flex;
-    gap:10px;
-}
-
-button{
-    flex:1;
-    padding:12px;
-    border:none;
-    border-radius:10px;
-    cursor:pointer;
-}
-
-.start{background:#16a34a;color:white;}
-.stop{background:#dc2626;color:white;}
-.capture{background:#2563eb;color:white;}
-
-#status{
-    margin-top:10px;
-    font-size:14px;
-}
-</style>
-</head>
-<body>
-
-<div class="card">
-    <h2>User Camera</h2>
-
-    <video id="video" autoplay playsinline muted></video>
-
-    <div class="controls">
-        <button class="start" onclick="startCamera()">Start</button>
-        <button class="stop" onclick="stopCamera()">Stop</button>
-        <button class="capture" onclick="captureImage()">Capture</button>
-    </div>
-
-    <p id="status">Ready</p>
-
-    <canvas id="canvas" hidden></canvas>
+    <button onclick="setFilter('none')">Normal</button>
+    <button onclick="setFilter('grayscale(100%)')">B&W</button>
+    <button onclick="setFilter('sepia(100%)')">Vintage</button>
+    <button onclick="setFilter('contrast(130%) saturate(150%)')">Cool</button>
+    <button onclick="setFilter('brightness(120%) blur(1px)')">Glow</button>
 </div>
 
 <script>
-let stream = null;
+async function showCamera(){
 
-async function startCamera(){
-    try{
-        stream = await navigator.mediaDevices.getUserMedia({
-            video:true
-        });
+    document.getElementById("welcome").style.display = "none";
+    document.getElementById("cameraBox").style.display = "block";
 
-        document.getElementById("video").srcObject = stream;
-        document.getElementById("status").textContent =
-            "Camera active";
-    }
-    catch(err){
-        document.getElementById("status").textContent =
-            "Camera permission denied";
-    }
+    const stream = await navigator.mediaDevices.getUserMedia({
+        video:true
+    });
+
+    document.getElementById("video").srcObject = stream;
 }
 
-function stopCamera(){
-    if(!stream) return;
-
-    stream.getTracks().forEach(track=>track.stop());
-
-    document.getElementById("video").srcObject = null;
-
-    document.getElementById("status").textContent =
-        "Camera stopped";
-}
-
-function captureImage(){
-
-    if(!stream){
-        alert("Start camera first");
-        return;
-    }
-
-    const video = document.getElementById("video");
-    const canvas = document.getElementById("canvas");
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    const ctx = canvas.getContext("2d");
-
-    ctx.drawImage(video,0,0);
-
-    const imageData =
-        canvas.toDataURL("image/jpeg",0.8);
-
-    console.log(imageData);
-
-    document.getElementById("status").textContent =
-        "Image captured";
-
-    // Firebase upload code can be added here
+function setFilter(filter){
+    document.getElementById("video").style.filter = filter;
 }
 </script>
-
-</body>
-</html>
